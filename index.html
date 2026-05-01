@@ -3,12 +3,90 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <script src="index.js"></script>
     <script src="chart.mjs" type="module"></script>
+    <script src="index.js" defer></script>
+    <link rel="stylesheet" href="index.css">
     <title>DS3 VISUALIZATION</title>
 </head>
 
-<body>
+<body>  
+    <div>
+
+        <table>
+            <tr>
+                <th>Chart Type</th>
+                <th>X-Axis</th>
+                <th>Y-Axis</th>
+            </tr>
+            <tr>
+                <td>
+                    <select id="chartType">
+                        <option value="1">Scatter Plot</option>
+                        <option value="2">Bar Chart</option>
+                        <option value="3">Bubble Chart</option>
+                        <option value="4">Heat Map</option>
+                        <option value="5">Blox plot</option>
+                    </select>
+                </td>
+                <td>
+                    <select name="xaxis" id="xaxis">
+                        <option value="1">Age</option>
+                        <option value="2">Watch time of Content</option>
+                        <option value="3">Daily Screen Time</option>
+                        <option value="4">Sleep</option>
+                        <option value="5">Attention Span</option>
+                        <option value="6">Focus Level</option>
+                        <option value="7">Task Completion</option>
+                        <option value="8">Stress Level</option>
+                        <option value="9">Platform</option>
+                    </select>
+                </td>
+                <td>
+                    <select name="yaxis" id="yaxis">
+                        <option value="1">Age</option>
+                        <option value="2">Watch time of Content</option>
+                        <option value="3">Daily Screen Time</option>
+                        <option value="4">Sleep</option>
+                        <option value="5">Attention Span</option>
+                        <option value="6">Focus Level</option>
+                        <option value="7">Task Completion</option>
+                        <option value="8">Stress Level</option>
+                        <option value="9">Platform</option>
+                        <option value="0">None</option>
+                    </select>
+                </td>
+            </tr>
+        </table>            
+    </div>  
+    <div>
+        <table id="filterTable">
+            <tr>
+                <th>Filter Category</th>
+                <th>Start</th>
+                <th>End</th>
+                <th></th>
+            </tr>
+            <tr>
+                <td>
+                    <select>
+                    <option value="1">Age</option>
+                    <option value="2">Watch time of Content</option>
+                    <option value="3">Daily Screen Time</option>
+                    <option value="4">Sleep</option>
+                    <option value="5">Attention Span</option>
+                    <option value="6">Focus Level</option>
+                    <option value="7">Task Completion</option>
+                    <option value="8">Stress Level</option>
+                    <option value="9">Platform</option>
+                    </select>
+                </td>
+                <td><input type="range" min="0" max="100" value="0"   class="slider-s"></td>
+                <td><input type="range" min="0" max="100" value="100" class="slider-e"></td>
+                <td><button id="addFilter">+</button></td>
+            </tr>
+        </table>
+    </div>
     <div id="container"></div>
+    <button type="submit" id="refresh">submit</button>
 </body>
 </html>
