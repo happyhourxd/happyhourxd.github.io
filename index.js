@@ -1,1 +1,4 @@
-alert("hi")
+
+data = fetch('data.csv');
+
+
