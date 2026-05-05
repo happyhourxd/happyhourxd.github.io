@@ -1,169 +1,223 @@
-const allOptions = Array.from(
-  document.querySelector("#xaxis").options
-).filter(o => o.value !== "0").map(o => ({ value: o.value, label: o.text }));
+import { drawChart, getFieldRanges } from "./chart.mjs";
 
-const optionMap = Object.fromEntries(allOptions.map(o => [o.value, o.label]));
+const chartType = document.getElementById("chartType");
+const xaxis = document.getElementById("xaxis");
+const yaxis = document.getElementById("yaxis");
+const refresh = document.getElementById("refresh");
+const filterTable = document.getElementById("filterTable");
 
-function updateSlider(input, cls) {
-  const min = +input.min, max = +input.max, val = +input.value;
-  const pct = ((val - min) / (max - min)) * 100;
-  const red   = "#E24B4A";
-  const track = "#D3D1C7";
-  if (cls === "slider-s") {
-    input.style.background = `linear-gradient(to right, ${red} 0%, ${red} ${pct}%, ${track} ${pct}%, ${track} 100%)`;
-  } else {
-    input.style.background = `linear-gradient(to right, ${track} 0%, ${track} ${pct}%, ${red} ${pct}%, ${red} 100%)`;
-  }
+
+const FIELDS = {
+  age: { label: "Age", axis: "1" },
+  reels_watch_time_hours: { label: "Watch Time", axis: "2" },
+  daily_screen_time_hours: { label: "Daily Screen Time", axis: "3" },
+  sleep_hours: { label: "Sleep Hours", axis: "4" },
+  attention_span_score: { label: "Attention Span", axis: "5" },
+  focus_level: { label: "Focus Level", axis: "6" },
+  task_completion_rate: { label: "Task Completion Rate", axis: "7" },
+  stress_level: { label: "Stress Level", axis: "8" },
+  platform: { label: "Platform", axis: "9" }
+};
+
+const axisToField = Object.fromEntries(
+  Object.entries(FIELDS).map(([k, v]) => [v.axis, k])
+);
+
+let used = new Set();
+let ranges = null;
+
+async function ensureRanges() {
+  if (!ranges) ranges = await getFieldRanges();
 }
 
-function initSliders(root) {
-  root.querySelectorAll(".slider-s, .slider-e").forEach(el => {
-    const cls = el.classList.contains("slider-s") ? "slider-s" : "slider-e";
-    updateSlider(el, cls);
-    el.addEventListener("input", () => updateSlider(el, cls));
+function resolveField(select) {
+  return axisToField[select.value];
+}
+
+function syncAxes() {
+  const x = xaxis.value;
+  const y = yaxis.value;
+
+  [...xaxis.options].forEach(o => {
+    o.disabled = o.value === y;
+  });
+
+  [...yaxis.options].forEach(o => {
+    o.disabled = o.value === x || chartType.value === "2";
   });
 }
 
-function getChartedValues() {
-  const vals = [document.getElementById("xaxis").value];
-  const y = document.getElementById("yaxis").value;
-  if (y !== "0") vals.push(y);
-  return vals;
+function buildOptions(current = null) {
+  const x = resolveField(xaxis);
+  const y = resolveField(yaxis);
+
+  return Object.entries(FIELDS)
+    .map(([key, obj]) => {
+      const disabled =
+        (used.has(key) && key !== current) ||
+        key === x ||
+        key === y;
+
+      return `
+        <option value="${obj.axis}"
+          ${key === current ? "selected" : ""}
+          ${disabled ? "disabled" : ""}>
+          ${obj.label}
+        </option>
+      `;
+    })
+    .join("");
 }
 
-function getUsedFilterValues() {
-  return Array.from(document.querySelectorAll("#filterTable select"))
-    .map(sel => sel.value);
+function applyRange(row, field) {
+  if (!ranges || !ranges[field]) return;
+
+  const [min, max] = ranges[field];
+
+  const minSlider = row.querySelector(".min");
+  const maxSlider = row.querySelector(".max");
+
+  minSlider.min = min;
+  minSlider.max = max;
+  minSlider.value = min;
+
+  maxSlider.min = min;
+  maxSlider.max = max;
+  maxSlider.value = max;
 }
 
-function getBlockedValues() {
-  return [...getChartedValues(), ...getUsedFilterValues()];
-}
-
-function rebuildSelect(sel, currentValue, blockedValues, includeNone = false) {
-  sel.innerHTML = "";
-  if (includeNone) {
-    const none = document.createElement("option");
-    none.value = "0";
-    none.textContent = "None";
-    sel.appendChild(none);
-  }
-  allOptions.forEach(opt => {
-    if (opt.value === currentValue || !blockedValues.includes(opt.value)) {
-      const el = document.createElement("option");
-      el.value = opt.value;
-      el.textContent = opt.label;
-      sel.appendChild(el);
-    }
-  });
-  sel.value = currentValue;
-  if (!sel.value || sel.value === "") sel.selectedIndex = 0;
-}
-
-function syncDropdowns() {
-  const xSel = document.getElementById("xaxis");
-  const ySel = document.getElementById("yaxis");
-  const xVal = xSel.value;
-  const yVal = ySel.value;
-  const filterVals = getUsedFilterValues();
-  const charted = getChartedValues();
-
-  // xaxis — never rebuilt, always shows everything
-
-  // yaxis — blocked only by xaxis
-  rebuildSelect(ySel, yVal, [xVal], true);
-
-  // filter rows — each blocked by charted + every other filter
-
-  document.querySelectorAll("#filterTable select").forEach(sel => {
-  const current = sel.value;
-  const otherFilters = filterVals.filter(v => v !== current);
-  const blocked = [...charted, ...otherFilters];
-
-  // if this filter's value was taken by a chart axis, find next free one
-  if (charted.includes(current)) {
-    const next = allOptions.find(opt => !blocked.includes(opt.value));
-    if (!next) { sel.closest("tr").remove(); return; }
-
-    // full rebuild with new value as current, not just one option
-    const newOtherFilters = filterVals.filter(v => v !== current && v !== next.value);
-    const newBlocked = [...charted, ...newOtherFilters];
-    sel.innerHTML = "";
-    allOptions.forEach(opt => {
-      if (opt.value === next.value || !newBlocked.includes(opt.value)) {
-        const el = document.createElement("option");
-        el.value = opt.value;
-        el.textContent = opt.label;
-        sel.appendChild(el);
-      }
-    });
-    sel.value = next.value;
-    return;
-  }
-
-  sel.innerHTML = "";
-  allOptions.forEach(opt => {
-    if (opt.value === current || !blocked.includes(opt.value)) {
-      const el = document.createElement("option");
-      el.value = opt.value;
-      el.textContent = opt.label;
-      sel.appendChild(el);
-    }
-  });
-  sel.value = current;
-});
-}
-
-function addFilterListeners(row) {
-  row.querySelector("select").addEventListener("change", syncDropdowns);
-  initSliders(row);
-  const removeBtn = row.querySelector(".removeFilter");
-  if (removeBtn) {
-    removeBtn.addEventListener("click", () => {
-      row.remove();
-      syncDropdowns();
-    });
-  }
-}
-
-document.getElementById("addFilter").addEventListener("click", () => {
-  const blocked = getBlockedValues();
-  const next = allOptions.find(opt => !blocked.includes(opt.value));
-  if (!next) return;
+async function createRow(field = null, showAdd = false, showRemove = true) {
+  await ensureRanges();
 
   const row = document.createElement("tr");
+
   row.innerHTML = `
-    <td><select></select></td>
-    <td><input type="range" min="0" max="100" value="0"   class="slider-s"></td>
-    <td><input type="range" min="0" max="100" value="100" class="slider-e"></td>
-    <td><button class="removeFilter">-</button></td>
+    <td>
+      <select>
+        ${buildOptions(field)}
+      </select>
+    </td>
+
+    <td><input type="range" class="min"></td>
+    <td><input type="range" class="max"></td>
+
+    <td>
+      ${showAdd ? `<button class="add">+</button>` : ""}
+      ${showRemove ? `<button class="remove">−</button>` : ""}
+    </td>
   `;
-  document.getElementById("filterTable").appendChild(row);
 
-  const newSel = row.querySelector("select");
-  const el = document.createElement("option");
-  el.value = next.value;
-  el.textContent = next.label;
-  newSel.appendChild(el);
-  newSel.value = next.value;
+  const select = row.querySelector("select");
+  const addBtn = row.querySelector(".add");
+  const removeBtn = row.querySelector(".remove");
 
-  addFilterListeners(row);
-  syncDropdowns();
-});
+  let currentField = field || resolveField(select);
 
-document.getElementById("yaxis").addEventListener("change", syncDropdowns);
+  if (!ranges[currentField]) {
+    console.warn("Invalid field:", currentField);
+    currentField = Object.keys(ranges)[0];
+  }
 
-// setChart reads option values and passes them to window.setChart from mjs
-const container = document.getElementById("container");
+  used.add(currentField);
+  applyRange(row, currentField);
 
-document.getElementById("refresh").addEventListener("click", () => {
-  const svg = window.setChart();
-  container.innerHTML = "";
-  container.append((svg ?? window.invalidChart()).node());
-});
+  select.addEventListener("change", () => {
+    const newField = resolveField(select);
 
-// init — don't call syncDropdowns before first row listeners are attached
-const firstFilterRow = document.querySelector("#filterTable tr:nth-child(2)");
-if (firstFilterRow) addFilterListeners(firstFilterRow);
-initSliders(document);
-syncDropdowns();
+    if (!ranges[newField]) return;
+    if (used.has(newField) && newField !== currentField) return;
+
+    used.delete(currentField);
+    currentField = newField;
+    used.add(newField);
+
+    applyRange(row, newField);
+    syncAxes();
+  });
+
+  if (removeBtn) {
+    removeBtn.onclick = () => {
+      used.delete(currentField);
+      row.remove();
+      syncAxes();
+    };
+  }
+
+  if (addBtn) {
+    addBtn.onclick = async () => {
+      const newRow = await createRow(null, false, true);
+      filterTable.appendChild(newRow);
+
+      const sel = newRow.querySelector("select");
+      const f = resolveField(sel);
+
+      if (ranges[f]) applyRange(newRow, f);
+
+      syncAxes();
+    };
+  }
+
+  return row;
+}
+
+async function initFilters() {
+  await ensureRanges();
+
+  filterTable.innerHTML = `
+    <tr>
+      <th>Filter</th>
+      <th>Start</th>
+    </tr>
+  `;
+
+  used.clear();
+
+  const x = resolveField(xaxis);
+  const y = chartType.value === "2" ? null : resolveField(yaxis);
+
+  filterTable.appendChild(await createRow(x, true, false));
+
+  if (y) {
+    filterTable.appendChild(await createRow(y, false, true));
+  }
+
+  syncAxes();
+}
+
+function updateUI() {
+  const isBar = chartType.value === "2";
+
+  yaxis.disabled = isBar;
+  yaxis.style.opacity = isBar ? 0.4 : 1;
+}
+
+// Show Chart
+refresh.onclick = async () => {
+  const rows = [...filterTable.querySelectorAll("tr")].slice(1);
+
+  const filters = rows.map(r => ({
+    field: resolveField(r.querySelector("select")),
+    min: +r.querySelector(".min").value,
+    max: +r.querySelector(".max").value
+  }));
+
+  await drawChart({
+    type: chartType.value,
+    x: resolveField(xaxis),
+    y: chartType.value === "2" ? null : resolveField(yaxis),
+    filters
+  });
+};
+
+chartType.onchange = () => {
+  updateUI();
+  initFilters();
+};
+
+xaxis.onchange = () => initFilters();
+yaxis.onchange = () => initFilters();
+
+//Init
+updateUI();
+initFilters();
+syncAxes();
