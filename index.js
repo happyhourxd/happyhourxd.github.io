@@ -11,10 +11,10 @@ const FIELDS = {
   age: { label: "Age", axis: "1" },
   reels_watch_time_hours: { label: "Watch Time", axis: "2" },
   daily_screen_time_hours: { label: "Daily Screen Time", axis: "3" },
-  sleep_hours: { label: "Sleep Hours", axis: "4" },
+  sleep_hours: { label: "Sleep", axis: "4" },
   attention_span_score: { label: "Attention Span", axis: "5" },
   focus_level: { label: "Focus Level", axis: "6" },
-  task_completion_rate: { label: "Task Completion Rate", axis: "7" },
+  task_completion_rate: { label: "Rate of task completed", axis: "7" },
   stress_level: { label: "Stress Level", axis: "8" },
   platform: { label: "Platform", axis: "9" }
 };
@@ -37,10 +37,6 @@ function resolveField(select) {
 function syncAxes() {
   const x = xaxis.value;
   const y = yaxis.value;
-
-  [...xaxis.options].forEach(o => {
-    o.disabled = o.value === y;
-  });
 
   [...yaxis.options].forEach(o => {
     o.disabled = o.value === x || chartType.value === "2";
@@ -201,11 +197,14 @@ refresh.onclick = async () => {
     max: +r.querySelector(".max").value
   }));
 
+  console.log(document.getElementById("color").value);
+
   await drawChart({
     type: chartType.value,
     x: resolveField(xaxis),
     y: chartType.value === "2" ? null : resolveField(yaxis),
-    filters
+    filters,
+    color: document.getElementById("color").value
   });
 };
 
