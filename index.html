@@ -95,5 +95,38 @@
 
 <script type="module" src="index.js"></script>
 <script src="style.js"></script>
+
+<div>
+  <h1>Documnetation!</h1> 
+  For this project, I started with looking for interesting data that generated some questions. I found <a href="https://www.kaggle.com/datasets/jayjoshi37/reelsshorts-consumption-vs-attention-span">this</a> dataset on <a href="https://kaggle.com">kaggle</a>.
+<br>
+<a href="https://youtu.be/hdzyfJRSqIA">here is my video!</a>
+
+<p>
+The first question I had was: What is the distribution of daily screen time in this study?
+
+So first I made a bar chart generator that took in one value and outputted the chart, at this point the function call to the chart generator was hard coded, but then this sparked the question: What is the distribution of all the other values in the dataset. So I added a drop down list for x-values, and a chart generator button. Now the program will take a x-axis input, and display a chart that groups the x-axis values and displays totals in the y-axis. I noticed that for groupings with a large number of variability, this method was impossible to interpret. So to increase usability, I added automatic binning, with a variable input of number of bins, and started with 10.c
+</p>
+<img src="/images/20260506173024.png">
+
+<p>
+After seeing all of the values placed on a bar chart, I saw the very even of distribution of hours across the amount of hours. I also looked at other categories of data from the study including, watch time of hours, and sleep in hours. I then wanted to see how these values compared across these categories. So like: What is the average watch time of someone who got 5 hours of sleep? To answer this question I added a Average bar chart, that takes in x-axis and a y-axis. It then outputted this graph: 
+<img src="/images/20260506174408.png">
+However the chart type and input values were hard-coded into the program so I added a drop down for chart type and Y-axis.
+</p>
+<p>
+Next I wanted to filter the input data based on other categories, to be able to limit the input x-axis values, so in the sleep case, the hours slept, and be able to also add new filters for other categories of data. So I added a filter section that allows me to do just this!
+So this could answer a question like: What is the average watch time of someone who got at least 6 hours of sleep who across people who spend a range of time on their screen.
+I also decided it was hard to see what the min and max of the sliders were, so I placed them on top of each other, and made the excluded part red, and the included part green.
+</p>
+<img src="/images/20260506174834.png">
+<p>
+Then I wanted to add a couple more charts, that had the same functionality, but could display the data in various ways. So i added a heat map, bubble chart and box plot. For the heat map I decided that the colors should range from white->selected color-> dark. This is becuase any color I choose could be hard for others to see depending on their display, so I added a working color picker too, alongside these couple of charts. 
+</p>
+<img src="/images/20260506175301.png">
+<p></p>
+Finally I figured I should add this color option was nice, so I decided to add it to other charts. Something I wish I added also, was options for the bins, possibly a drop down or input number that could change the amount of bins.
+</p>
+</div>
 </body>
 </html>
